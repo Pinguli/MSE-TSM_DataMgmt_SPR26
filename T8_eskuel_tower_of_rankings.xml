@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<game>
+    <head>
+        <title>SQL Island Evolved - T8</title>
+        <teaser>Climb the Tower of Rankings and master Top-N queries</teaser>
+        <copyright>Lukas Freytag, Adnrin Grundl, Severin Heitzer, Seah Kim, Hemanthi Paidi</copyright>
+    </head>
+    <scenes>
+        <text-scene>
+            <text>Far beyond the usual tables and transactions, in the middle of the Digital Ocean, lies SQL Island. At its centre stands the Tower of Rankings, an ancient signal spire built by the Data Architects to preserve the order of wealth, honour, rarity, and renown.</text>
+        </text-scene>
+        <text-scene>
+            <text>You are SQLaus, a tired but determined data explorer. Rescue lies at the top of the tower, but each sealed floor opens only for a true Guardian of the Data. Somewhere above, an old beacon waits to be reactivated — pure SQL:92 spirit, with just a touch of cosmic heroism.</text>
+        </text-scene>
+        <select-scene is-row-order-relevant="true" is-col-order-relevant="false" are-col-names-relevant="false">
+            <text>The Gate of the Worthy glows with a short inscription: “Only the three richest inhabitants may enter the tower.” Return the names and gold amounts of the three richest inhabitants, sorted from richest to poorest.</text>
+            <sql-solution>SELECT name, gold FROM inhabitant ORDER BY gold DESC, name ASC LIMIT 3</sql-solution>
+            <sql-placeholder>SELECT name, gold FROM inhabitant ORDER BY ... LIMIT 3</sql-placeholder>
+        </select-scene>
+        <text-scene>
+            <text>The gate opens with a metallic hum. Your improvised rescue crew cheers as the first seal breaks. A dusty speaker crackles to life, as if it still remembers the Walkman era of SQL:92.</text>
+        </text-scene>
+        <select-scene is-row-order-relevant="true" is-col-order-relevant="false" are-col-names-relevant="false">
+            <text>In the Hall of Formal Scrolls, the guardian rejects informal syntax. Show the same three richest inhabitants again, but now use the standard wording of the old architects.</text>
+            <sql-solution>SELECT name, gold FROM inhabitant ORDER BY gold DESC, name ASC FETCH FIRST 3 ROWS ONLY</sql-solution>
+            <sql-placeholder>SELECT name, gold FROM inhabitant ORDER BY ... FETCH FIRST 3 ROWS ONLY</sql-placeholder>
+        </select-scene>
+        <text-scene>
+            <text>The scrolls accept the formal incantation. Ahead, the Stair of Single Crowns reveals a full leaderboard of islanders, each waiting for a unique place in line.</text>
+        </text-scene>
+        <select-scene is-row-order-relevant="true" is-col-order-relevant="false" are-col-names-relevant="true">
+            <text>Assign a unique position to every inhabitant according to their gold, from richest to poorest. Return the columns name, gold, position.</text>
+            <sql-solution>SELECT name, gold, ROW_NUMBER() OVER (ORDER BY gold DESC, name ASC) AS position FROM inhabitant ORDER BY position ASC</sql-solution>
+            <sql-placeholder>SELECT name, gold, ROW_NUMBER() OVER (ORDER BY ...) AS position FROM inhabitant ORDER BY position ASC</sql-placeholder>
+        </select-scene>
+        <text-scene>
+            <text>You reach the Chamber of Shared Glory. Here the tower changes its rules: equal achievement must receive equal honour. The stone walls display a symbol that looks suspiciously like a Nova Corps badge.</text>
+        </text-scene>
+        <select-scene is-row-order-relevant="true" is-col-order-relevant="false" are-col-names-relevant="true">
+            <text>Rank the inhabitants by reputation. Equal reputation must receive the same rank, and the next rank must show the gap. Return the columns name, reputation, honour_rank.</text>
+            <sql-solution>SELECT name, reputation, RANK() OVER (ORDER BY reputation DESC) AS honour_rank FROM inhabitant ORDER BY honour_rank ASC, name ASC</sql-solution>
+            <sql-placeholder>SELECT name, reputation, RANK() OVER (ORDER BY reputation DESC) AS honour_rank FROM inhabitant ORDER BY honour_rank ASC, name ASC</sql-placeholder>
+        </select-scene>
+        <text-scene>
+            <text>The chamber yields. Only the summit remains. The final guardian speaks: “True order does not fear equality — but it rejects unnecessary gaps.”</text>
+        </text-scene>
+        <select-scene is-row-order-relevant="true" is-col-order-relevant="false" are-col-names-relevant="true">
+            <text>Rank the villages by population. Ties must share the same rank, but the numbering must remain consecutive. Return the columns name, population, village_rank.</text>
+            <sql-solution>SELECT name, population, DENSE_RANK() OVER (ORDER BY population DESC) AS village_rank FROM village ORDER BY village_rank ASC, name ASC</sql-solution>
+            <sql-placeholder>SELECT name, population, DENSE_RANK() OVER (ORDER BY population DESC) AS village_rank FROM village ORDER BY village_rank ASC, name ASC</sql-placeholder>
+        </select-scene>
+        <text-scene>
+            <text>The summit beacon awakens. Light rises from the Tower of Rankings and cuts across the Digital Ocean. Rescue is finally within reach — not through brute force, but through careful ordering, ranking, and a little improvised team spirit.</text>
+        </text-scene>
+        <select-scene is-row-order-relevant="true" is-col-order-relevant="false" are-col-names-relevant="false">
+            <text>Bonus challenge — The Balcony of Local Champions: for each village, show the two richest inhabitants. Return village, inhabitant name, and gold, ordered by village and local rank.</text>
+            <sql-solution>SELECT village, name, gold FROM (SELECT v.name AS village, i.name, i.gold, ROW_NUMBER() OVER (PARTITION BY v.id ORDER BY i.gold DESC, i.name ASC) AS local_rank FROM inhabitant i JOIN village v ON v.id = i.village_id) ranked WHERE local_rank &lt;= 2 ORDER BY village ASC, local_rank ASC, name ASC</sql-solution>
+            <sql-placeholder>SELECT village, name, gold FROM (...) ranked WHERE local_rank &lt;= 2 ORDER BY village ASC, local_rank ASC, name ASC</sql-placeholder>
+        </select-scene>
+        <text-scene>
+            <text>Bonus complete. The tower records your journey in the archive of the Data Architects. SQLaus and the islanders are safe, and every future Guardian of the Data can learn from your path to the summit.</text>
+        </text-scene>
+    </scenes>
+    <initial-sql-script>DROP TABLE IF EXISTS inhabitant;
+DROP TABLE IF EXISTS village;
+
+CREATE TABLE village (
+    id          INTEGER PRIMARY KEY,
+    name        TEXT NOT NULL,
+    population  INTEGER NOT NULL
+);
+
+CREATE TABLE inhabitant (
+    id          INTEGER PRIMARY KEY,
+    name        TEXT NOT NULL,
+    village_id  INTEGER NOT NULL REFERENCES village(id),
+    profession  TEXT NOT NULL,
+    gold        INTEGER NOT NULL,
+    reputation  INTEGER NOT NULL
+);
+
+INSERT INTO village (id, name, population) VALUES
+    (1, 'Oakheart', 120),
+    (2, 'Mooncliff', 95),
+    (3, 'Emberfall', 120),
+    (4, 'Tidewatch', 70);
+
+INSERT INTO inhabitant (id, name, village_id, profession, gold, reputation) VALUES
+    (1, 'Ayla', 1, 'Scout', 250, 88),
+    (2, 'Borin', 2, 'Blacksmith', 400, 91),
+    (3, 'Cyra', 3, 'Ranger', 400, 91),
+    (4, 'Daro', 1, 'Hunter', 180, 77),
+    (5, 'Elin', 4, 'Healer', 320, 95),
+    (6, 'Fynn', 2, 'Trader', 250, 88),
+    (7, 'Gala', 3, 'Scholar', 150, 70),
+    (8, 'Hiro', 4, 'Captain', 500, 99),
+    (9, 'Ivo', 1, 'Inventor', 320, 95),
+    (10, 'Juno', 4, 'Fisher', 90, 60);</initial-sql-script>
+</game>
